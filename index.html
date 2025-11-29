@@ -11,35 +11,59 @@
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent-blue: #38bdf8;
-            --accent-orange: #f97316;
-            --status-go: #22c55e;
-            --status-rest: #ef4444;
+            --status-go: #064e3b; 
+            --status-rest: #450a0a; 
             --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; 
+        }
 
         body {
             font-family: var(--font-family);
             background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
-            height: 100vh;
+            width: 100%;
+            height: 100%; 
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; 
+            transition: background-color 0.4s ease;
         }
 
-        /* --- LAYOUT UTILITIES --- */
+        /* --- VIEWS & LAYOUT --- */
+        
         .container {
             padding: 20px;
-            overflow-y: auto;
             flex: 1;
-            padding-bottom: 80px; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            -webkit-overflow-scrolling: touch; 
+            width: 100%;
+            max-width: 100vw;
+            display: flex; 
+            flex-direction: column;
+            position: relative;
+        }
+
+        .view-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; 
+            background-color: var(--bg-dark);
         }
 
         .hidden { display: none !important; }
-        .flex-center { display: flex; align-items: center; justify-content: center; }
 
         h1, h2 { margin: 0 0 1rem 0; font-weight: 700; }
         h1 { font-size: 1.5rem; color: var(--accent-blue); }
@@ -51,6 +75,7 @@
             border: none;
             outline: none;
             transition: all 0.2s;
+            user-select: none;
         }
 
         /* --- LIST ITEMS --- */
@@ -66,11 +91,13 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0; 
+            width: 100%; 
         }
 
         .card:active { transform: scale(0.98); background-color: #263345; }
 
-        .card-content { flex: 1; }
+        .card-content { flex: 1; overflow: hidden; }
         .card-title { font-size: 1.1rem; font-weight: 600; display: block; margin-bottom: 4px; }
         .card-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 10px; }
         
@@ -89,24 +116,19 @@
             display: flex; align-items: center; justify-content: center;
             color: transparent; font-size: 1.2rem; transition: all 0.2s ease;
         }
-        .check-btn.completed { background: var(--status-go); border-color: var(--status-go); color: white; }
+        .check-btn.completed { background: #22c55e; border-color: #22c55e; color: white; }
 
-        /* --- NAVIGATION HEADER --- */
+        /* --- FIXED NAVIGATION HEADER --- */
         .nav-header {
+            flex-shrink: 0; 
             display: flex; 
             align-items: center; 
             padding: 15px 20px; 
-            background: rgba(40, 50, 70, 0.98);
+            background: rgba(30, 41, 59, 0.98);
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            position: sticky;
-            top: 0;
             z-index: 40;
-            backdrop-filter: blur(12px);
             box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            border-bottom-left-radius: 24px;
-            border-bottom-right-radius: 24px;
-            margin: -20px -20px 0 -20px; 
-            width: calc(100% + 40px);
+            width: 100%;
         }
 
         .back-btn {
@@ -119,6 +141,7 @@
             margin-right: 15px; 
             padding: 0;
             border: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
         }
         .back-btn:active { background: rgba(255,255,255,0.1); }
 
@@ -140,7 +163,15 @@
             border: 2px solid var(--accent-blue); border-radius: 50%; opacity: 0.7;
         }
 
-        #exercise-list { padding-top: 35px; }
+        /* --- SCROLLABLE CONTENT AREA --- */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 80px;
+        }
 
         /* --- RESET BUTTONS --- */
         .reset-container { margin-top: 30px; text-align: center; padding-bottom: 20px; }
@@ -153,15 +184,11 @@
         /* --- IMMERSIVE WORKOUT MODE --- */
         #workout-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 50; background-color: var(--bg-dark);
-            display: flex; flex-direction: column; transition: background-color 0.4s ease;
+            z-index: 50; 
+            background: transparent; 
+            display: flex; flex-direction: column; 
+            overflow: hidden;
         }
-
-        #workout-overlay.phase-prep { background-color: #0f172a; }
-        #workout-overlay.phase-count { background-color: #7c2d12; }
-        #workout-overlay.phase-work { background-color: #064e3b; }
-        #workout-overlay.phase-rest { background-color: #450a0a; }
-        #workout-overlay.phase-done { background-color: #0f172a; }
 
         .overlay-nav {
             display: flex; justify-content: space-between; align-items: center;
@@ -209,7 +236,8 @@
         }
 
         .controls-area {
-            padding: 5px 20px 40px 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 5px 20px 40px 20px; 
+            background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
             display: flex; flex-direction: column; gap: 15px; align-items: center;
         }
 
@@ -225,15 +253,42 @@
             border-radius: 50px; background: white; color: var(--bg-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-transform: uppercase;
         }
 
-        .btn-group { display: flex; gap: 10px; width: 100%; max-width: 360px; justify-content: center;}
-        
-        /* UPDATED: LIGHTER SEMI-TRANSPARENT BUTTONS */
-        .btn-sec {
-            background: rgba(0, 0, 0, 0.3); /* Adjusted from 0.6 */
-            color: rgba(255, 255, 255, 0.9); padding: 10px 16px;
-            border-radius: 20px; font-size: 0.9rem; backdrop-filter: blur(5px); flex: 1; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1);
+        /* --- FIXED BOTTOM BUTTONS --- */
+        .btn-group { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            max-width: 360px; 
+            justify-content: center;
+            height: 56px; /* FIXED HEIGHT prevents jumping */
         }
-        .btn-sec.filled { background: var(--text-main); color: var(--bg-dark); font-weight: 600; border-color: var(--text-main); }
+        
+        .btn-sec {
+            background: rgba(0, 0, 0, 0.3); 
+            color: rgba(255, 255, 255, 0.9); 
+            padding: 0 4px; /* Reduced side padding */
+            border-radius: 20px; 
+            font-size: 0.85rem; /* Smaller, stable font size */
+            backdrop-filter: blur(5px); 
+            flex: 1; 
+            text-align: center; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%; /* Fill the fixed container */
+            line-height: 1.1;
+            overflow: hidden; /* Prevent spill */
+        }
+        
+        .btn-sec.filled { 
+            background: var(--text-main); 
+            color: var(--bg-dark); 
+            font-weight: 600; 
+            border-color: var(--text-main); 
+            opacity: 1;
+        }
 
         #done-view {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -241,12 +296,12 @@
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .done-icon { font-size: 4rem; margin-bottom: 20px; color: var(--status-go); }
+        .done-icon { font-size: 4rem; margin-bottom: 20px; color: #22c55e; }
         .done-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; }
         .done-subtitle { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 40px; }
         
         .btn-done-finish {
-            background: var(--status-go); color: white; width: 100%; max-width: 300px; padding: 18px;
+            background: #22c55e; color: white; width: 100%; max-width: 300px; padding: 18px;
             font-size: 1.2rem; font-weight: 700; border-radius: 50px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
         }
         
@@ -259,6 +314,7 @@
 </head>
 <body>
 
+    <!-- HOME VIEW: DAY SELECTION -->
     <div id="view-home" class="container">
         <h1>Workout Tracker</h1>
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
@@ -267,8 +323,10 @@
         <div id="day-list"></div>
     </div>
 
-    <div id="view-exercises" class="container hidden" style="padding-top: 0;"> 
+    <!-- EXERCISE VIEW: LIST OF MOVEMENTS (FIXED HEADER LAYOUT) -->
+    <div id="view-exercises" class="view-panel hidden"> 
         
+        <!-- FIXED NAV HEADER -->
         <div class="nav-header">
             <button class="back-btn" onclick="App.navTo('home')">←</button>
             <div class="header-title-area">
@@ -277,13 +335,17 @@
             </div>
         </div>
 
-        <div id="exercise-list"></div>
-        
-        <div class="reset-container">
-            <button class="btn-reset" onclick="App.resetDayProgress(this)">Reset Day Progress</button>
+        <!-- SCROLLABLE LIST AREA -->
+        <div class="scroll-content">
+            <div id="exercise-list"></div>
+            
+            <div class="reset-container">
+                <button class="btn-reset" onclick="App.resetDayProgress(this)">Reset Day Progress</button>
+            </div>
         </div>
     </div>
 
+    <!-- WORKOUT OVERLAY: THE IMMERSIVE TRACKER -->
     <div id="workout-overlay" class="hidden">
         
         <div class="overlay-nav">
@@ -309,7 +371,7 @@
                     <div id="pacer-wrapper">
                         <div class="pacer-container">
                             <div id="pacer-bar" class="pacer-bar"></div>
-                            <div id="pacer-text" class="pacer-instruction">LOWER (ECCENTRIC)</div>
+                            <div id="pacer-text" class="pacer-instruction">RESIST (ECCENTRIC)</div>
                         </div>
                     </div>
                 </div>
@@ -324,7 +386,7 @@
                     <button id="btn-action" class="btn-main" onclick="App.handleMainAction()">START SET</button>
                     
                     <div class="btn-group">
-                        <button class="btn-sec" id="btn-manual-finish" onclick="App.toggleManualFinish()">Manual Finish</button>
+                        <button class="btn-sec" id="btn-extra-reps" onclick="App.toggleExtraReps()">Extra Reps</button>
                         <button class="btn-sec" onclick="App.togglePause()">Pause</button>
                         <button class="btn-sec" id="btn-sound-toggle" onclick="App.toggleSoundMode()">Vibrate</button>
                     </div>
@@ -452,10 +514,14 @@
                 isManualFinish: false,
                 totalPausedTime: 0, 
                 lastPauseStart: 0,
+                
+                // Track Phases
+                wasConcentric: false, // Start assuming eccentric
+
                 animationFrameId: null,
-                // NEW: Sound State
-                soundMode: 'vibrate', // 'vibrate', 'beep', 'silent'
-                audioCtx: null
+                soundMode: 'vibrate', 
+                audioCtx: null,
+                isIOS: false
             },
 
             init() {
@@ -464,53 +530,102 @@
                     this.state.completed = new Set(JSON.parse(saved));
                 }
                 this.renderDayList();
+
+                // iOS Detection logic
+                this.state.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                // If iOS, default to Beep instead of Vibrate
+                if (this.state.isIOS) {
+                    this.state.soundMode = 'beep';
+                }
+
                 this.updateSoundButton();
             },
 
-            // --- NEW SOUND FUNCTIONS ---
+            // Ensure Audio is Ready (Must call on user gesture)
+            ensureAudio() {
+                if (this.state.soundMode === 'beep') {
+                    if (!this.state.audioCtx) {
+                        this.state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.state.audioCtx.state === 'suspended') {
+                        this.state.audioCtx.resume();
+                    }
+                }
+            },
 
             toggleSoundMode() {
-                const modes = ['vibrate', 'beep', 'silent'];
+                // If iOS, we remove 'vibrate' from the rotation
+                const modes = this.state.isIOS ? ['beep', 'silent'] : ['vibrate', 'beep', 'silent'];
                 const currentIndex = modes.indexOf(this.state.soundMode);
                 const nextIndex = (currentIndex + 1) % modes.length;
                 this.state.soundMode = modes[nextIndex];
                 
-                // Initialize audio context on user interaction if needed
-                if (this.state.soundMode === 'beep' && !this.state.audioCtx) {
-                    this.state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-
+                this.ensureAudio();
                 this.updateSoundButton();
-                
-                // Demo the sound/vibration
-                this.triggerCue();
+                this.playSound('standard'); // Demo
             },
 
             updateSoundButton() {
                 const btn = document.getElementById('btn-sound-toggle');
                 if (this.state.soundMode === 'vibrate') {
-                    btn.innerText = "Vibrate";
+                    btn.innerHTML = "Vibrate";
                 } else if (this.state.soundMode === 'beep') {
-                    btn.innerText = "Beep";
+                    btn.innerHTML = `Beep<div style='font-size:0.65rem; opacity:0.8; margin-top:2px; font-weight:400;'>(Enable Ringer)</div>`;
                 } else {
-                    btn.innerText = "Silent";
+                    btn.innerHTML = "Silent";
                 }
             },
 
-            triggerCue() {
+            // Unified Sound Engine
+            playSound(type) {
                 if (this.state.soundMode === 'vibrate') {
-                    if (navigator.vibrate) navigator.vibrate([200]);
-                } else if (this.state.soundMode === 'beep') {
-                    this.playSoftBeep();
+                    // Simple vibrate cues
+                    if (navigator.vibrate) {
+                        if (type === 'deep') navigator.vibrate([100]); // Short thud
+                        else if (type === 'switch') navigator.vibrate([50]); // Short tick
+                        else if (type === 'double') navigator.vibrate([100, 50, 100]);
+                        else if (type === 'victory') navigator.vibrate([100, 100, 100, 300]);
+                        else navigator.vibrate([200]);
+                    }
+                    return;
                 }
-            },
+                
+                if (this.state.soundMode !== 'beep' || !this.state.audioCtx) return;
 
-            playSoftBeep() {
-                // Creates a pleasant, soft sine wave beep
-                if (!this.state.audioCtx) return;
                 const ctx = this.state.audioCtx;
                 if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
 
+                // VOLUME ADJUSTMENTS
+                if (type === 'standard') {
+                    // Soft high beep (C5 - 523Hz) for Go/Rest countdown
+                    this.playTone(523.25, now, 0.4, 0.5); // Reduced gain to 0.5
+                } else if (type === 'switch') {
+                     // Mid beep (A4 - 440Hz) for End of Eccentric (Start Pushing)
+                    this.playTone(440, now, 0.15, 1.0); // Loud for exercise cue
+                } else if (type === 'deep') {
+                    // Deep thud (A3 - 220Hz) for End of Concentric (Rep Done)
+                    this.playTone(220, now, 0.3, 1.0); // Loud for exercise cue
+                } else if (type === 'double') {
+                    // Double High Beep (880Hz) for Set Finished (Start of Rest)
+                    // Reduced as requested
+                    this.playTone(880, now, 0.1, 0.4); 
+                    this.playTone(880, now + 0.15, 0.1, 0.4);
+                } else if (type === 'victory') {
+                    // "Doo-too-do-do" Victory Jingle
+                    // Reduced as requested
+                    const vol = 0.3; // Much quieter
+                    const noteLen = 0.12; 
+                    this.playTone(523.25, now, noteLen, vol);       
+                    this.playTone(659.25, now + noteLen, noteLen, vol); 
+                    this.playTone(783.99, now + noteLen*2, noteLen, vol); 
+                    this.playTone(1046.50, now + noteLen*3, 0.4, vol);    
+                }
+            },
+
+            playTone(freq, startTime, duration, maxGain = 1.0) {
+                const ctx = this.state.audioCtx;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
 
@@ -518,19 +633,16 @@
                 gain.connect(ctx.destination);
 
                 osc.type = 'sine';
-                osc.frequency.value = 523.25; // C5 Note
+                osc.frequency.value = freq;
 
-                // Soft Envelope
-                const now = ctx.currentTime;
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.1, now + 0.05); // Fade In
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5); // Fade Out
+                // Envelope
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(maxGain, startTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
-                osc.start(now);
-                osc.stop(now + 0.5);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
             },
-
-            // --- EXISTING LOGIC ---
 
             saveProgress() {
                 localStorage.setItem('wt_completed', JSON.stringify([...this.state.completed]));
@@ -620,7 +732,10 @@
 
             navTo(viewId) {
                 document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
                 document.getElementById('workout-overlay').classList.add('hidden');
+                document.body.style.backgroundColor = 'var(--bg-dark)'; // Reset BG on nav
+
                 if (viewId === 'home') {
                     document.getElementById('view-home').classList.remove('hidden');
                     this.renderDayList(); 
@@ -714,6 +829,9 @@
                 document.getElementById('wk-name').innerText = exercise.name;
                 this.updateSetDisplay();
                 
+                // HIDE THE UNDERLYING LIST SO IT DOESN'T BLEED THROUGH
+                document.getElementById('view-exercises').classList.add('hidden');
+
                 document.getElementById('workout-overlay').classList.remove('hidden');
                 document.getElementById('active-workout-view').classList.remove('hidden');
                 document.getElementById('done-view').classList.add('hidden');
@@ -723,6 +841,9 @@
             },
 
             handleMainAction() {
+                // Ensure audio context is ready on first click
+                this.ensureAudio();
+
                 if (this.state.phase === 'IDLE') this.startCountdown();
                 else if (this.state.phase === 'COUNTDOWN') this.skipCountdown();
                 else if (this.state.phase === 'WORK') this.finishSet();
@@ -741,10 +862,10 @@
                 this.updateTimeEstimate(); 
             },
 
-            toggleManualFinish() {
-                this.state.isManualFinish = !this.state.isManualFinish;
-                const btn = document.getElementById('btn-manual-finish');
-                if (this.state.isManualFinish) {
+            toggleExtraReps() {
+                this.state.isExtraRepsMode = !this.state.isExtraRepsMode;
+                const btn = document.getElementById('btn-extra-reps');
+                if (this.state.isExtraRepsMode) {
                     btn.classList.add('filled');
                 } else {
                     btn.classList.remove('filled');
@@ -795,14 +916,12 @@
                 display.innerText = count;
                 display.classList.add('pulse');
                 
-                // Store in state so we can clear it
                 this.state.timerInterval = setInterval(() => {
                     count--;
                     if (count > 0) display.innerText = count;
                     else if (count === 0) {
                         display.innerText = "GO!";
-                        // TRIGGER CUE HERE (Start of set)
-                        this.triggerCue();
+                        this.playSound('standard');
                     }
                     else {
                         clearInterval(this.state.timerInterval);
@@ -816,8 +935,16 @@
                 this.state.pacerStartTime = Date.now();
                 this.state.totalPausedTime = 0; 
                 this.state.isPaused = false;
+                
+                // Initialize state so logic works correctly immediately
+                this.state.wasConcentric = false; // We start at eccentric
+                
                 const repStr = String(this.state.currentExercise.reps).split('-').pop();
                 this.state.repsRemaining = parseInt(repStr) || 10;
+                
+                // Important: Reset Rep Counter for new set
+                this.state.lastRepsDone = 0; 
+                
                 this.setPhase('WORK');
                 this.runWorkLoop();
             },
@@ -825,6 +952,9 @@
             finishSet() {
                 this.clearTimers();
                 this.state.isPaused = false; 
+                
+                // Play Double Beep for Set Finish
+                this.playSound('double');
                 
                 if (this.state.currentSet >= this.state.currentExercise.sets) {
                     this.showDoneScreen();
@@ -842,9 +972,10 @@
             },
 
             showDoneScreen() {
-                document.getElementById('workout-overlay').className = 'phase-done'; 
+                this.setPhase('DONE'); 
                 document.getElementById('active-workout-view').classList.add('hidden');
                 document.getElementById('done-view').classList.remove('hidden');
+                this.playSound('victory');
             },
 
             completeAndExit() {
@@ -892,33 +1023,67 @@
 
                         const now = Date.now();
                         const effectiveTime = now - this.state.totalPausedTime;
+                        
+                        // Calculate position in the rep
                         const diff = (effectiveTime - this.state.pacerStartTime) % totalTempo;
                         
-                        let percentage = 0;
+                        // Determine current phase
+                        const isConcentric = diff >= eccentric; 
                         
-                        if (diff < eccentric) {
+                        // AUDIO LOGIC: Phase Transitions
+                        // 1. Eccentric -> Concentric (Switch)
+                        if (isConcentric && !this.state.wasConcentric) {
+                            this.playSound('switch');
+                        }
+                        // 2. Concentric -> Eccentric (Rep End/Deep)
+                        else if (!isConcentric && this.state.wasConcentric) {
+                            // Only play if we still have reps left (or just finished the last one)
+                            // We use repsDone logic below for counting, but sound triggers here
+                             this.playSound('deep');
+                        }
+                        
+                        // Update state for next frame
+                        this.state.wasConcentric = isConcentric;
+
+                        // VISUALS
+                        let percentage = 0;
+                        if (!isConcentric) {
+                            // Eccentric Phase
                             percentage = (diff / eccentric) * 100;
-                            text.innerText = `LOWER (ECCENTRIC)`;
+                            text.innerText = `RESIST (ECCENTRIC)`;
                             bar.style.left = 'auto'; bar.style.right = '0';
                             bar.style.background = "#fff"; bar.style.width = `${percentage}%`;
                         } else {
+                            // Concentric Phase
                             const concentricTime = diff - eccentric;
                             const concentricTotal = totalTempo - eccentric;
                             percentage = (concentricTime / concentricTotal) * 100;
-                            text.innerText = `PUSH (CONCENTRIC)`;
+                            text.innerText = `CONTRACT (CONCENTRIC)`;
                             bar.style.left = '0'; bar.style.right = 'auto';
                             bar.style.background = "var(--accent-blue)"; bar.style.width = `${percentage}%`;
                         }
 
+                        // COUNTER LOGIC
                         const totalElapsed = effectiveTime - this.state.pacerStartTime;
                         const repsDone = Math.floor(totalElapsed / totalTempo);
-                        const currentRepsLeft = this.state.repsRemaining - repsDone;
                         
-                        display.innerText = currentRepsLeft;
-                        label.innerText = `REPS LEFT`;
+                        // Display Logic
+                        const remaining = this.state.repsRemaining - repsDone;
+                        
+                        if (remaining > 0) {
+                             display.innerText = remaining;
+                             label.innerText = `REPS LEFT`;
+                        } else {
+                             // We are at 0 or past it (Extra Reps)
+                             const extra = Math.abs(remaining);
+                             display.innerText = "+" + extra;
+                             label.innerText = "EXTRA REPS";
+                        }
+                        
                         subLabel.innerText = `(Total Reps: ${repsDone})`;
                         
-                        if (currentRepsLeft <= 0 && !this.state.isManualFinish) {
+                        // Auto-finish check (Only if NOT in Extra Reps Mode)
+                        if (remaining <= 0 && !this.state.isExtraRepsMode) {
                             this.finishSet();
                             return; 
                         }
@@ -942,8 +1107,7 @@
                     this.formatRestTime(this.state.timerValue);
                     this.updateTimeEstimate(); 
                     if (this.state.timerValue <= 0) {
-                        // TRIGGER CUE HERE (Rest finished)
-                        this.triggerCue();
+                        this.playSound('standard');
                         this.skipRest(); 
                     }
                 }, 1000);
@@ -964,42 +1128,44 @@
                 const pacer = document.getElementById('pacer-wrapper');
                 const speedControls = document.getElementById('speed-controls-ui');
 
-                overlay.className = ''; 
+                // FIXED: Change BODY color for full immersion
+                let bgColor = 'var(--bg-dark)';
 
                 if (phase === 'IDLE') {
-                    overlay.classList.add('phase-prep');
+                    bgColor = '#0f172a';
                     btn.innerText = "START SET"; label.innerText = "TARGET REPS";
                     subLabel.innerText = this.getMotivation();
                     pacer.style.opacity = '0.3'; speedControls.style.opacity = '1'; speedControls.style.pointerEvents = 'auto';
                     document.getElementById('main-display').innerText = this.state.repsRemaining;
-                    
-                    // RESET PACER BAR TO 0%
                     document.getElementById('pacer-bar').style.width = '0%';
-                    document.getElementById('pacer-text').innerText = "LOWER (ECCENTRIC)";
+                    document.getElementById('pacer-text').innerText = "RESIST (ECCENTRIC)";
                 } 
                 else if (phase === 'COUNTDOWN') {
-                    overlay.classList.add('phase-count');
+                    bgColor = '#7c2d12';
                     btn.innerText = "SKIP COUNTDOWN"; label.innerText = "STARTING IN...";
                     subLabel.innerText = "Focus!";
                     pacer.style.opacity = '0.5'; speedControls.style.opacity = '0.5'; speedControls.style.pointerEvents = 'none';
-                    
-                    // RESET PACER BAR TO 0%
                     document.getElementById('pacer-bar').style.width = '0%';
-                    document.getElementById('pacer-text').innerText = "LOWER (ECCENTRIC)";
+                    document.getElementById('pacer-text').innerText = "RESIST (ECCENTRIC)";
                 }
                 else if (phase === 'WORK') {
-                    overlay.classList.add('phase-work');
+                    bgColor = 'var(--status-go)';
                     btn.innerText = "FINISH SET"; 
                     label.innerText = "REPS LEFT";
                     subLabel.innerText = "(Total Reps: 0)";
                     pacer.style.opacity = '1'; speedControls.style.opacity = '1'; speedControls.style.pointerEvents = 'auto';
                 } 
                 else if (phase === 'REST') {
-                    overlay.classList.add('phase-rest');
+                    bgColor = 'var(--status-rest)';
                     btn.innerText = "SKIP REST"; label.innerText = "RECOVERY REST";
                     subLabel.innerText = this.getMotivation();
                     pacer.style.opacity = '0'; speedControls.style.opacity = '0'; speedControls.style.pointerEvents = 'none';
                 }
+                else if (phase === 'DONE') {
+                    bgColor = '#0f172a';
+                }
+                
+                document.body.style.backgroundColor = bgColor;
                 this.updateTimeEstimate();
             },
 
@@ -1036,6 +1202,11 @@
             quitWorkout() {
                 this.clearTimers();
                 document.getElementById('workout-overlay').classList.add('hidden');
+                document.body.style.backgroundColor = 'var(--bg-dark)'; // Reset BG
+                
+                // Show the exercises view again
+                document.getElementById('view-exercises').classList.remove('hidden');
+                
                 this.selectDay(this.state.currentDayIdx);
             }
         };
