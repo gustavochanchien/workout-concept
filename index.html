@@ -125,21 +125,24 @@
 
         <div class="workout-view-container">
             <div id="active-workout-view">
+                <!-- TOP: visualizer -->
                 <div class="visualizer">
                     <div class="big-number" id="main-display">0</div>
                     <div class="label-text" id="main-label">TARGET REPS</div>
                     <div class="sub-label-text" id="sub-label"></div>
+                </div>
 
-                    <div id="pacer-wrapper">
-                        <div class="pacer-container">
-                            <div id="pacer-bar" class="pacer-bar"></div>
-                            <div id="pacer-text" class="pacer-instruction">
-                                RESIST (ECCENTRIC)
-                            </div>
+                <!-- MIDDLE: pacer bar (between visualizer and controls) -->
+                <div id="pacer-wrapper">
+                    <div class="pacer-container">
+                        <div id="pacer-bar" class="pacer-bar"></div>
+                        <div id="pacer-text" class="pacer-instruction">
+                            RESIST (ECCENTRIC)
                         </div>
                     </div>
                 </div>
 
+                <!-- BOTTOM: controls -->
                 <div class="controls-area">
                     <div class="speed-controls" id="speed-controls-ui">
                         <button
