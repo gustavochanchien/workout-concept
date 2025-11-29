@@ -4,7 +4,7 @@
 const SPLIT_LIBRARY = [
     {
         id: "split_ppl_classic",
-        name: "Planet Fitness PPL",
+        name: "Gym PPL",
         description: "5 Day Push, Pull, Legs Hybrid",
         days: [
             {
@@ -76,9 +76,9 @@ const SPLIT_LIBRARY = [
             }
         ]
     },
-    // KB + Bodyweight Superhero split
+    // KB + Bodyweight split
     {
-        id: "split_kb_bodyweight_superhero",
+        id: "split_kb_bodyweight",
         name: "KB + Bodyweight",
         description: "4–5 day kettlebell & calisthenics split",
         days: [
@@ -163,6 +163,81 @@ const SPLIT_LIBRARY = [
                     { name: "KB Goblet Squat (Circuit)", sets: 4, reps: "15", type: "compound" },
                     { name: "Mountain Climbers (Circuit)", sets: 4, reps: "30s", type: "isolation" },
                     { name: "V-Ups (Circuit)", sets: 4, reps: "12-15", type: "isolation" }
+                ]
+            }
+        ]
+    },
+    // Dumbbells Only split
+    {
+        id: "split_db_only",
+        name: "Dumbbells Only",
+        description: "4-day dumbbell-only hypertrophy split",
+        days: [
+            // Day 1 — Upper Push (Chest, Shoulders, Triceps)
+            {
+                id: "db_d1",
+                name: "Day 1 - Upper Push (Chest/Shoulders/Triceps)",
+                exercises: [
+                    { name: "Flat Dumbbell Bench Press", sets: 4, reps: "6-10", type: "compound" },
+                    { name: "Incline Dumbbell Bench Press", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Fly (Floor or Bench)", sets: 3, reps: "10-15", type: "isolation" },
+                    { name: "Seated Dumbbell Shoulder Press", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Lateral Raise", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Dumbbell Overhead Tricep Extension", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Dumbbell Skull Crushers", sets: 3, reps: "10-12", type: "isolation" }
+                ]
+            },
+
+            // Day 2 — Upper Pull (Back, Rear Delts, Biceps)
+            {
+                id: "db_d2",
+                name: "Day 2 - Upper Pull (Back/Rear Delts/Biceps)",
+                exercises: [
+                    { name: "Dumbbell Bent-Over Row", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Single-Arm Dumbbell Row", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Dumbbell Romanian Deadlift", sets: 3, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Pullover", sets: 3, reps: "10-15", type: "isolation" },
+                    { name: "Dumbbell Rear Delt Fly (Incline Bench)", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Dumbbell Hammer Curl", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Alternating Dumbbell Curl", sets: 3, reps: "10-12", type: "isolation" }
+                ]
+            },
+
+            // Day 3 — Legs + Glutes
+            {
+                id: "db_d3",
+                name: "Day 3 - Legs + Glutes",
+                exercises: [
+                    { name: "Dumbbell Goblet Squat", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Bulgarian Split Squat", sets: 3, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Romanian Deadlift", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Dumbbell Hip Thrust / Glute Bridge", sets: 3, reps: "10-15", type: "compound" },
+                    { name: "Dumbbell Walking Lunge", sets: 3, reps: "12-16", type: "compound" },
+                    { name: "Standing Dumbbell Calf Raise", sets: 4, reps: "12-20", type: "isolation" },
+                    { name: "Dumbbell Weighted Crunch or Dead Bug", sets: 3, reps: "12-15", type: "isolation" }
+                ]
+            },
+
+            // Day 4 — Upper Hypertrophy (Chest/Back/Shoulders/Arms)
+            {
+                id: "db_d4",
+                name: "Day 4 - Upper Hypertrophy",
+                exercises: [
+                    // Chest
+                    { name: "High-Incline Dumbbell Press", sets: 3, reps: "8-12", type: "compound" },
+
+                    // Back / Lats
+                    { name: "Dumbbell Row (Elbows Tucked)", sets: 3, reps: "10-12", type: "compound" },
+                    { name: "Dumbbell Reverse Fly", sets: 3, reps: "12-15", type: "isolation" },
+
+                    // Shoulders
+                    { name: "Dumbbell Arnold Press", sets: 3, reps: "10-12", type: "compound" },
+                    { name: "Partial Dumbbell Lateral Raise (Top-Range)", sets: 3, reps: "15-20", type: "isolation" },
+
+                    // Arms
+                    { name: "Dumbbell Concentration Curl", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Single-Arm Dumbbell Overhead Tricep Extension", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Dumbbell Farmer Carry", sets: 3, reps: "30-40s", type: "isolation" }
                 ]
             }
         ]

@@ -26,7 +26,8 @@ const App = {
         audioCtx: null,
         isIOS: false,
         supportsVibrate: false,
-        isExtraRepsMode: false
+        isExtraRepsMode: false,
+        theme: "auto", // "auto" | "dark" | "light" | "battery"
     },
 
     init() {
@@ -51,23 +52,56 @@ const App = {
         this.state.favoriteSplitId = localStorage.getItem("wt_favorite_split");
 
         // Device capability
+        const ua = navigator.userAgent || "";
+
         this.state.isIOS =
-            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            /iPad|iPhone|iPod/.test(ua) ||
             (navigator.platform === "MacIntel" &&
                 navigator.maxTouchPoints > 1);
 
+        // Only treat as "supports vibrate" on mobile-ish devices
+        const isMobile =
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+                ua
+            );
+
         this.state.supportsVibrate =
             typeof navigator !== "undefined" &&
-            typeof navigator.vibrate === "function";
+            typeof navigator.vibrate === "function" &&
+            isMobile;
 
-        // If no vibrate or on iOS, prefer beep
-        if (!this.state.supportsVibrate || this.state.isIOS) {
-            this.state.soundMode = "beep";
+        // THEME preference
+        const savedTheme = localStorage.getItem("wt_theme") || "auto";
+        this.state.theme = savedTheme;
+        this.applyTheme();
+        this.updateThemeButtons();
+
+        // SOUND preference
+        const savedSound = localStorage.getItem("wt_sound_mode");
+
+        // Decide which modes are allowed on this device
+        const allowedSoundModes =
+            !this.state.supportsVibrate || this.state.isIOS
+                ? ["beep", "silent"]
+                : ["vibrate", "beep", "silent"];
+
+        if (savedSound && allowedSoundModes.includes(savedSound)) {
+            // Use saved preference if it's valid for this device
+            this.state.soundMode = savedSound;
+        } else {
+            // Fallback defaults
+            if (!this.state.supportsVibrate || this.state.isIOS) {
+                this.state.soundMode = "beep";
+            } else {
+                this.state.soundMode = "vibrate";
+            }
         }
 
         this.ensureAudio();
-        this.renderSplitList();
         this.updateSoundButton();
+
+        // Render list of splits
+        this.renderSplitList();
 
         // Auto-load favorite
         if (this.state.favoriteSplitId) {
@@ -80,7 +114,82 @@ const App = {
         }
     },
 
-    // -------- Helpers --------
+    // ---------------- THEME HANDLING ----------------
+
+    getSystemTheme() {
+        if (
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+        ) {
+            return "dark";
+        }
+        return "light";
+    },
+
+    ensureThemeMediaListener() {
+        if (this._mqListenerAttached || !window.matchMedia) return;
+
+        const mq = window.matchMedia("(prefers-color-scheme: dark)");
+        const handler = () => {
+            if (this.state.theme === "auto") {
+                this.applyTheme();
+            }
+        };
+
+        if (mq.addEventListener) {
+            mq.addEventListener("change", handler);
+        } else if (mq.addListener) {
+            mq.addListener(handler); // older Safari
+        }
+
+        this._mqListenerAttached = true;
+    },
+
+    applyTheme() {
+        const root = document.documentElement;
+        let themeToApply = this.state.theme;
+
+        if (this.state.theme === "auto") {
+            this.ensureThemeMediaListener();
+            themeToApply = this.getSystemTheme(); // "dark" or "light"
+        }
+
+        root.setAttribute("data-theme", themeToApply);
+    },
+
+    setTheme(theme) {
+        this.state.theme = theme;
+        localStorage.setItem("wt_theme", theme);
+        this.applyTheme();
+        this.updateThemeButtons();
+    },
+
+    setThemeFromUI(theme) {
+        this.setTheme(theme);
+        this.hideSettings();
+    },
+
+    updateThemeButtons() {
+        const buttons = document.querySelectorAll("[data-theme-option]");
+        buttons.forEach((btn) => {
+            const val = btn.getAttribute("data-theme-option");
+            btn.classList.toggle("active", val === this.state.theme);
+        });
+    },
+
+    toggleSettings() {
+        const panel = document.getElementById("settings-panel");
+        if (!panel) return;
+        panel.classList.toggle("hidden");
+    },
+
+    hideSettings() {
+        const panel = document.getElementById("settings-panel");
+        if (!panel) return;
+        panel.classList.add("hidden");
+    },
+
+    // ---------------- HELPERS ----------------
 
     saveWeight(splitId, dayIdx, exIdx, val) {
         const key = `${splitId}|${dayIdx}|${exIdx}`;
@@ -92,7 +201,7 @@ const App = {
         const repStr = String(ex.reps).split("-").pop();
         const reps = parseInt(repStr) || 10;
         const tempo = 4; // rough estimate, independent of PRESETS
-        const type = ex.type || "isolation";
+               const type = ex.type || "isolation";
         const rest = CONFIG.rest[type] || CONFIG.rest.default;
         return ex.sets * (reps * tempo + rest);
     },
@@ -112,7 +221,7 @@ const App = {
         );
     },
 
-    // -------- Navigation / Rendering --------
+    // ---------------- NAVIGATION / RENDERING ----------------
 
     navTo(viewId) {
         document.getElementById("view-splits").classList.add("hidden");
@@ -129,6 +238,9 @@ const App = {
         } else if (viewId === "exercises") {
             document.getElementById("view-exercises").classList.remove("hidden");
         }
+
+        // Always hide settings when switching main views
+        this.hideSettings();
     },
 
     renderSplitList() {
@@ -140,20 +252,23 @@ const App = {
 
         list.innerHTML = "";
 
-        // Important: SPLIT_LIBRARY must be defined globally in workouts.js
         if (!Array.isArray(SPLIT_LIBRARY)) {
             console.error("SPLIT_LIBRARY is not an array or not defined");
             return;
         }
 
-        SPLIT_LIBRARY.forEach((split, idx) => {
+        SPLIT_LIBRARY.forEach((split) => {
             const isFav = this.state.favoriteSplitId === split.id;
             const starClass = isFav ? "active" : "";
 
             const btn = document.createElement("div");
             btn.className = "card";
+
+            // Make the entire card clickable (except the star button)
+            btn.onclick = () => this.selectSplit(split);
+
             btn.innerHTML = `
-                <div class="card-content" onclick="App.selectSplit(SPLIT_LIBRARY[${idx}])">
+                <div class="card-content">
                     <span class="card-title" style="color:var(--accent-blue)">${split.name}</span>
                     <div class="card-meta">
                         <span>${split.days.length} Workouts</span>
@@ -215,7 +330,11 @@ const App = {
                     </span>
                     <div class="card-meta">
                         <span>${day.exercises.length} Exercises</span>
-                        <span style="color: ${completedCount === day.exercises.length ? "var(--status-go)" : "var(--accent-blue)"}">
+                        <span style="color: ${
+                            completedCount === day.exercises.length
+                                ? "var(--status-go)"
+                                : "var(--accent-blue)"
+                        }">
                             ${completedCount}/${day.exercises.length} Completed
                         </span>
                     </div>
@@ -351,17 +470,21 @@ const App = {
         document.getElementById("header-subtitle").innerText = text;
     },
 
-    // -------- Audio / Sound --------
+    // ---------------- AUDIO / SOUND ----------------
 
     ensureAudio() {
         if (this.state.soundMode === "beep") {
             if (!this.state.audioCtx) {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const AudioCtx =
+                    window.AudioContext || window.webkitAudioContext;
                 if (AudioCtx) {
                     this.state.audioCtx = new AudioCtx();
                 }
             }
-            if (this.state.audioCtx && this.state.audioCtx.state === "suspended") {
+            if (
+                this.state.audioCtx &&
+                this.state.audioCtx.state === "suspended"
+            ) {
                 this.state.audioCtx.resume();
             }
         }
@@ -378,6 +501,9 @@ const App = {
         const nextIndex = (currentIndex + 1) % modes.length;
         this.state.soundMode = modes[nextIndex];
 
+        // Persist user preference
+        localStorage.setItem("wt_sound_mode", this.state.soundMode);
+
         this.ensureAudio();
         this.updateSoundButton();
         this.playSound("standard");
@@ -387,6 +513,9 @@ const App = {
         const btn = document.getElementById("btn-sound-toggle");
         const supportsVibrate = this.state.supportsVibrate;
 
+        if (!btn) return;
+
+        // Devices without vibrate or on iOS: never show "Vibrate"
         if (!supportsVibrate || this.state.isIOS) {
             if (this.state.soundMode === "silent") {
                 btn.textContent = "Silent";
@@ -397,6 +526,7 @@ const App = {
             return;
         }
 
+        // Devices that support vibrate and are not iOS
         if (this.state.soundMode === "vibrate") {
             btn.textContent = "Vibrate";
         } else if (this.state.soundMode === "beep") {
@@ -458,7 +588,7 @@ const App = {
         osc.stop(startTime + duration);
     },
 
-    // -------- Workout Flow --------
+    // ---------------- WORKOUT FLOW ----------------
 
     startExercisePreview(exIdx) {
         const day = this.state.currentSplit.days[this.state.currentDayIdx];
@@ -477,7 +607,9 @@ const App = {
 
         document.getElementById("view-exercises").classList.add("hidden");
         document.getElementById("workout-overlay").classList.remove("hidden");
-        document.getElementById("active-workout-view").classList.remove("hidden");
+        document.getElementById("active-workout-view").classList.remove(
+            "hidden"
+        );
         document.getElementById("done-view").classList.add("hidden");
 
         this.setPhase("IDLE");
@@ -520,9 +652,9 @@ const App = {
 
     updateTimeEstimate() {
         const ex = this.state.currentExercise;
-        if (!ex) {
-            const el = document.getElementById("total-time-left");
-            if (el) el.innerText = "Time Remaining: --";
+        const label = document.getElementById("total-time-left");
+        if (!label || !ex) {
+            if (label) label.innerText = "Time Remaining: --";
             return;
         }
 
@@ -567,9 +699,9 @@ const App = {
         }
 
         const totalSeconds = Math.ceil(futureTime + currentPhaseTime);
-        document.getElementById(
-            "total-time-left"
-        ).innerText = `Time Remaining: ${this.formatDuration(totalSeconds)}`;
+        label.innerText = `Time Remaining: ${this.formatDuration(
+            totalSeconds
+        )}`;
     },
 
     startCountdown() {
@@ -760,7 +892,7 @@ const App = {
         let bgColor = "var(--bg-dark)";
 
         if (phase === "IDLE") {
-            bgColor = "#0f172a";
+            bgColor = "var(--bg-dark)";
             btn.innerText = "START SET";
             label.innerText = "TARGET REPS";
             subLabel.innerText = this.getMotivation();
@@ -771,7 +903,7 @@ const App = {
                 this.state.repsRemaining;
             document.getElementById("pacer-bar").style.width = "0%";
         } else if (phase === "COUNTDOWN") {
-            bgColor = "#7c2d12";
+            bgColor = "var(--status-rest)";
             btn.innerText = "SKIP COUNTDOWN";
             label.innerText = "STARTING IN...";
             subLabel.innerText = "Focus!";
@@ -810,8 +942,11 @@ const App = {
 
     togglePause() {
         this.state.isPaused = !this.state.isPaused;
-        const btn = document.querySelectorAll(".btn-sec")[1];
-        btn.innerText = this.state.isPaused ? "Resume" : "Pause";
+        const btns = document.querySelectorAll(".btn-sec");
+        const pauseBtn = btns[1]; // Extra Reps, Pause, Sound
+        if (pauseBtn) {
+            pauseBtn.innerText = this.state.isPaused ? "Resume" : "Pause";
+        }
         if (this.state.isPaused) {
             this.state.lastPauseStart = Date.now();
         } else {
@@ -838,7 +973,7 @@ const App = {
         document.body.style.backgroundColor = "var(--bg-dark)";
         document.getElementById("view-exercises").classList.remove("hidden");
         this.selectDay(this.state.currentDayIdx);
-    }
+    },
 };
 
 // Init on DOM ready
