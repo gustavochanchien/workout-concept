@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workout Tracker</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f97316;
+            --status-go: #22c55e;
+            --status-rest: #ef4444;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- LAYOUT UTILITIES --- */
+        .container {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            padding-bottom: 80px; 
+        }
+
+        .hidden { display: none !important; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+
+        h1, h2 { margin: 0 0 1rem 0; font-weight: 700; }
+        h1 { font-size: 1.5rem; color: var(--accent-blue); }
+        h2 { font-size: 1.25rem; }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+            border: none;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        /* --- LIST ITEMS --- */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card:active { transform: scale(0.98); background-color: #263345; }
+
+        .card-content { flex: 1; }
+        .card-title { font-size: 1.1rem; font-weight: 600; display: block; margin-bottom: 4px; }
+        .card-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 10px; }
+        
+        .time-est {
+            font-weight: 400; opacity: 0.7; font-size: 0.9em; margin-left: 8px; color: var(--accent-blue);
+        }
+
+        .tag { 
+            background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; 
+        }
+
+        .check-area { padding-left: 15px; display: flex; align-items: center; justify-content: center; }
+        .check-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 2px solid var(--text-muted); background: transparent;
+            display: flex; align-items: center; justify-content: center;
+            color: transparent; font-size: 1.2rem; transition: all 0.2s ease;
+        }
+        .check-btn.completed { background: var(--status-go); border-color: var(--status-go); color: white; }
+
+        /* --- NAVIGATION HEADER --- */
+        .nav-header {
+            display: flex; 
+            align-items: center; 
+            padding: 15px 20px; 
+            background: rgba(40, 50, 70, 0.98);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            margin: -20px -20px 0 -20px; 
+            width: calc(100% + 40px);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.05); 
+            width: 40px; height: 40px; 
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main);
+            font-size: 1.2rem; 
+            margin-right: 15px; 
+            padding: 0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .back-btn:active { background: rgba(255,255,255,0.1); }
+
+        .header-title-area { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        #day-title-display {
+            font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px;
+            color: white; margin: 0; line-height: 1.2;
+        }
+
+        #day-time-remaining {
+            font-size: 0.8rem; color: var(--accent-blue); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-top: 4px; display: flex; align-items: center; gap: 6px;
+        }
+        
+        #day-time-remaining::before {
+            content: ''; display: inline-block; width: 8px; height: 8px;
+            border: 2px solid var(--accent-blue); border-radius: 50%; opacity: 0.7;
+        }
+
+        #exercise-list { padding-top: 35px; }
+
+        /* --- RESET BUTTONS --- */
+        .reset-container { margin-top: 30px; text-align: center; padding-bottom: 20px; }
+        .btn-reset {
+            background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 12px 24px;
+            border-radius: 8px; font-size: 0.9rem; border: 1px solid rgba(239, 68, 68, 0.3); width: 100%;
+        }
+        .btn-reset.confirm-state { background: rgba(239, 68, 68, 0.8); color: white; font-weight: bold; }
+
+        /* --- IMMERSIVE WORKOUT MODE --- */
+        #workout-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; background-color: var(--bg-dark);
+            display: flex; flex-direction: column; transition: background-color 0.4s ease;
+        }
+
+        #workout-overlay.phase-prep { background-color: #0f172a; }
+        #workout-overlay.phase-count { background-color: #7c2d12; }
+        #workout-overlay.phase-work { background-color: #064e3b; }
+        #workout-overlay.phase-rest { background-color: #450a0a; }
+        #workout-overlay.phase-done { background-color: #0f172a; }
+
+        .overlay-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: transparent; z-index: 60; width: 100%;
+        }
+        .overlay-back-btn {
+            width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.3); color: white;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .time-remaining {
+            background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 20px; font-size: 0.9rem;
+            color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .wk-header { padding: 10px 20px; text-align: center; background: transparent; }
+        .wk-title { font-size: 1.4rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0; line-height: 1.2; }
+        .wk-subtitle { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; }
+
+        .workout-view-container { flex: 1; display: flex; flex-direction: column; width: 100%; position: relative; }
+        #active-workout-view { flex: 1; display: flex; flex-direction: column; width: 100%; }
+
+        .visualizer {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
+        }
+        .big-number {
+            font-size: 6rem; font-weight: 800; font-variant-numeric: tabular-nums;
+            line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom: 5px; transition: transform 0.1s;
+        }
+        .pulse { animation: pulseAnim 0.8s infinite; }
+        @keyframes pulseAnim { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+
+        .label-text { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; font-weight: 600; margin-bottom: 2px; }
+        .sub-label-text { 
+            font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; 
+            letter-spacing: 1px; margin-bottom: 5px; font-weight: 500; height: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #pacer-wrapper { width: 100%; margin-top: 10px; margin-bottom: 10px; }
+        .pacer-container { width: 100%; height: 40px; background: rgba(0,0,0,0.5); position: relative; overflow: hidden; display: flex; align-items: center; }
+        .pacer-bar { height: 100%; width: 0%; background: #fff; position: absolute; top: 0; z-index: 1; }
+        .pacer-instruction {
+            position: absolute; width: 100%; text-align: center; z-index: 2; font-weight: bold; font-size: 1rem;
+            text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.95); text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+        }
+
+        .controls-area {
+            padding: 5px 20px 40px 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            display: flex; flex-direction: column; gap: 15px; align-items: center;
+        }
+
+        .speed-controls { display: flex; gap: 4px; margin-bottom: 10px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 20px; }
+        .btn-speed {
+            background: transparent; color: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 16px;
+            font-size: 0.75rem; font-weight: 600; border: 1px solid transparent;
+        }
+        .btn-speed.active { background: var(--text-main); color: var(--bg-dark); }
+
+        .btn-main {
+            width: 100%; max-width: 300px; padding: 20px; font-size: 1.3rem; font-weight: 700;
+            border-radius: 50px; background: white; color: var(--bg-dark); box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-transform: uppercase;
+        }
+
+        .btn-group { display: flex; gap: 10px; width: 100%; max-width: 360px; justify-content: center;}
+        
+        /* UPDATED: LIGHTER SEMI-TRANSPARENT BUTTONS */
+        .btn-sec {
+            background: rgba(0, 0, 0, 0.3); /* Adjusted from 0.6 */
+            color: rgba(255, 255, 255, 0.9); padding: 10px 16px;
+            border-radius: 20px; font-size: 0.9rem; backdrop-filter: blur(5px); flex: 1; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-sec.filled { background: var(--text-main); color: var(--bg-dark); font-weight: 600; border-color: var(--text-main); }
+
+        #done-view {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 40px; animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .done-icon { font-size: 4rem; margin-bottom: 20px; color: var(--status-go); }
+        .done-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; }
+        .done-subtitle { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 40px; }
+        
+        .btn-done-finish {
+            background: var(--status-go); color: white; width: 100%; max-width: 300px; padding: 18px;
+            font-size: 1.2rem; font-weight: 700; border-radius: 50px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+        
+        .btn-done-more {
+            background: transparent; color: white; border: 2px solid rgba(255,255,255,0.2);
+            width: 100%; max-width: 300px; padding: 15px; font-size: 1.1rem; border-radius: 50px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HOME VIEW: DAY SELECTION -->
+    <div id="view-home" class="container">
+        <h1>Workout Tracker</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Science-based workout tracker with exercises available at the international distric Planet Fitness.
+        </p>
+        <div id="day-list"></div>
+    </div>
+
+    <!-- EXERCISE VIEW: LIST OF MOVEMENTS -->
+    <div id="view-exercises" class="container hidden" style="padding-top: 0;"> 
+        
+        <!-- NAV HEADER -->
+        <div class="nav-header">
+            <button class="back-btn" onclick="App.navTo('home')">←</button>
+            <div class="header-title-area">
+                <h2 id="day-title-display">Day Name</h2>
+                <span id="day-time-remaining">~45m remaining</span>
+            </div>
+        </div>
+
+        <div id="exercise-list"></div>
+        
+        <div class="reset-container">
+            <button class="btn-reset" onclick="App.resetDayProgress(this)">Reset Day Progress</button>
+        </div>
+    </div>
+
+    <!-- WORKOUT OVERLAY: THE IMMERSIVE TRACKER -->
+    <div id="workout-overlay" class="hidden">
+        
+        <div class="overlay-nav">
+            <button class="overlay-back-btn" onclick="App.quitWorkout()">←</button>
+            <div class="time-remaining" id="total-time-left">Est: 0m</div>
+        </div>
+
+        <div class="wk-header">
+            <h3 class="wk-title" id="wk-name">Exercise Name</h3>
+            <div class="wk-subtitle">
+                Set <span id="wk-set-curr">1</span> of <span id="wk-set-total">4</span>
+            </div>
+        </div>
+
+        <div class="workout-view-container">
+            
+            <div id="active-workout-view">
+                <div class="visualizer">
+                    <div class="big-number" id="main-display">0</div>
+                    <div class="label-text" id="main-label">TARGET REPS</div>
+                    <div class="sub-label-text" id="sub-label"></div>
+
+                    <div id="pacer-wrapper">
+                        <div class="pacer-container">
+                            <div id="pacer-bar" class="pacer-bar"></div>
+                            <div id="pacer-text" class="pacer-instruction">LOWER (ECCENTRIC)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-area">
+                    <div class="speed-controls" id="speed-controls-ui">
+                        <button class="btn-speed" id="btn-slow" onclick="App.setSpeed('slow')">Slow 4s/2s</button>
+                        <button class="btn-speed active" id="btn-default" onclick="App.setSpeed('default')">Normal 3s/1s</button>
+                        <button class="btn-speed" id="btn-fast" onclick="App.setSpeed('fast')">Fast 2s/1s</button> 
+                    </div>
+
+                    <button id="btn-action" class="btn-main" onclick="App.handleMainAction()">START SET</button>
+                    
+                    <div class="btn-group">
+                        <button class="btn-sec" id="btn-manual-finish" onclick="App.toggleManualFinish()">Manual Finish</button>
+                        <button class="btn-sec" onclick="App.togglePause()">Pause</button>
+                        <button class="btn-sec" onclick="App.quitWorkout()">Exit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="done-view" class="hidden">
+                <div class="done-icon">🎉</div>
+                <div class="done-title">Nice Job!</div>
+                <div class="done-subtitle">You completed all sets for this exercise.</div>
+                
+                <button class="btn-done-finish" onclick="App.completeAndExit()">Finish Exercise</button>
+                <button class="btn-done-more" onclick="App.addExtraSet()">+ 1 More Set</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        /**
+         * CONFIGURATION & DATA
+         */
+        const PRESETS = {
+            slow: { eccentric: 4, concentric: 2, total: 6 },
+            default: { eccentric: 3, concentric: 1, total: 4 },
+            fast: { eccentric: 2, concentric: 1, total: 3 }
+        };
+
+        const CONFIG = {
+            rest: { compound: 180, isolation: 90, default: 60 }
+        };
+
+        const MOTIVATION = [
+            "Keep pushing!", "You got this!", "Light weight!", "Control it!",
+            "Squeeze!", "Focus!", "One more rep!", "Build muscle!", "Mind-muscle!", "Easy money!"
+        ];
+
+        const WORKOUT_DATA = [
+            {
+                id: "d1",
+                day: "Day 1 - Push",
+                exercises: [
+                    { name: "Smith Machine Bench Press", sets: 4, reps: "6-8", type: "compound" },
+                    { name: "Incline Dumbbell Press", sets: 4, reps: "8-10", type: "compound" },
+                    { name: "Chest Press Machine", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Seated DB Shoulder Press", sets: 4, reps: "6-10", type: "compound" },
+                    { name: "Lateral Raises", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Rear Delt Machine", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Cable Tricep Pushdown", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Overhead Rope Extension", sets: 3, reps: "12-15", type: "isolation" }
+                ]
+            },
+            {
+                id: "d2",
+                day: "Day 2 - Pull",
+                exercises: [
+                    { name: "Lat Pulldown (Wide Grip)", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Machine Pulldown (Neutral)", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Seated Cable Row", sets: 4, reps: "8-12", type: "compound" },
+                    { name: "Row Machine", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "One-Arm Dumbbell Row", sets: 3, reps: "8-12", type: "isolation" },
+                    { name: "Face Pulls", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Reverse Pec Deck", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Cable Curl", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Dumbbell Curls", sets: 3, reps: "8-12", type: "isolation" }
+                ]
+            },
+            {
+                id: "d3",
+                day: "Day 3 - Legs",
+                exercises: [
+                    { name: "Smith Machine Squat", sets: 4, reps: "6-10", type: "compound" },
+                    { name: "Leg Press (Deep Stance)", sets: 4, reps: "10-15", type: "compound" },
+                    { name: "Leg Extension Machine", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Romanian Deadlift (RDL)", sets: 4, reps: "8-10", type: "compound" },
+                    { name: "Seated Leg Curl", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Leg Press Calf Raise", sets: 4, reps: "12-15", type: "isolation" },
+                    { name: "Cable Crunch", sets: 3, reps: "12-15", type: "isolation" }
+                ]
+            },
+            {
+                id: "d4",
+                day: "Day 4 - Hybrid",
+                exercises: [
+                    { name: "Assisted Dips", sets: 3, reps: "6-10", type: "compound" },
+                    { name: "Cable Fly", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Assisted Pull-Ups", sets: 3, reps: "6-12", type: "compound" },
+                    { name: "Single-Arm Row", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Arnold Press (DB)", sets: 3, reps: "8-12", type: "compound" },
+                    { name: "Cable Lateral Raise", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Cable Curl", sets: 3, reps: "10-12", type: "isolation" }
+                ]
+            },
+            {
+                id: "d5",
+                day: "Day 5 - Arms (Opt)",
+                exercises: [
+                    { name: "Lateral Raise Dropset", sets: 4, reps: "15", type: "isolation" },
+                    { name: "Reverse Pec Deck", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Machine Dip", sets: 3, reps: "8-12", type: "isolation" },
+                    { name: "Rope Extension", sets: 3, reps: "12-15", type: "isolation" },
+                    { name: "Preacher Curl", sets: 3, reps: "10-12", type: "isolation" },
+                    { name: "Hammer Curls", sets: 3, reps: "10-12", type: "isolation" }
+                ]
+            }
+        ];
+
+        /**
+         * CORE APPLICATION LOGIC
+         */
+        const App = {
+            state: {
+                currentDayIdx: 0,
+                currentExercise: null,
+                currentExerciseIdx: 0, 
+                currentSet: 1,
+                phase: 'IDLE',
+                timerValue: 0,
+                timerInterval: null,
+                repsRemaining: 0,
+                isPaused: false,
+                pacerStartTime: 0,
+                currentTempo: PRESETS.default,
+                completed: new Set(),
+                isManualFinish: false,
+                totalPausedTime: 0, 
+                lastPauseStart: 0,
+                animationFrameId: null
+            },
+
+            init() {
+                const saved = localStorage.getItem('wt_completed');
+                if (saved) {
+                    this.state.completed = new Set(JSON.parse(saved));
+                }
+                this.renderDayList();
+            },
+
+            saveProgress() {
+                localStorage.setItem('wt_completed', JSON.stringify([...this.state.completed]));
+            },
+
+            formatDuration(totalSeconds) {
+                if (totalSeconds < 60) return "< 1m";
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.round((totalSeconds % 3600) / 60);
+                if (h > 0) return `${h}h ${m}m`;
+                return `${m}m`;
+            },
+
+            getExerciseSeconds(ex) {
+                const repStr = String(ex.reps).split('-').pop();
+                const reps = parseInt(repStr) || 10;
+                const tempo = 4; 
+                const type = ex.type || 'isolation';
+                const rest = CONFIG.rest[type] || CONFIG.rest.default;
+                return ex.sets * ((reps * tempo) + rest);
+            },
+
+            updateRemainingHeader(dayIdx) {
+                const day = WORKOUT_DATA[dayIdx];
+                let totalSeconds = 0;
+                let completedCount = 0;
+
+                day.exercises.forEach((ex, exIdx) => {
+                    if (this.state.completed.has(`${dayIdx}-${exIdx}`)) {
+                        completedCount++;
+                        return; 
+                    }
+                    totalSeconds += this.getExerciseSeconds(ex);
+                });
+
+                const text = completedCount === day.exercises.length ? "All Done!" : `Time Remaining: ${this.formatDuration(totalSeconds)}`;
+                document.getElementById('day-time-remaining').innerText = text;
+            },
+
+            getMotivation() {
+                const rand = Math.floor(Math.random() * MOTIVATION.length);
+                return MOTIVATION[rand];
+            },
+
+            resetDayProgress(btnElement) {
+                if (btnElement.dataset.confirm === "true") {
+                    const dayIdx = this.state.currentDayIdx;
+                    WORKOUT_DATA[dayIdx].exercises.forEach((_, exIdx) => {
+                        this.state.completed.delete(`${dayIdx}-${exIdx}`);
+                    });
+                    this.saveProgress();
+                    this.selectDay(dayIdx); 
+                    
+                    btnElement.innerText = "Reset Day Progress";
+                    btnElement.dataset.confirm = "false";
+                    btnElement.classList.remove('confirm-state');
+                } else {
+                    btnElement.innerText = "Tap Again to Confirm";
+                    btnElement.dataset.confirm = "true";
+                    btnElement.classList.add('confirm-state');
+                    setTimeout(() => {
+                        if (btnElement.dataset.confirm === "true") {
+                            btnElement.innerText = "Reset Day Progress";
+                            btnElement.dataset.confirm = "false";
+                            btnElement.classList.remove('confirm-state');
+                        }
+                    }, 3000);
+                }
+            },
+
+            toggleCompletion(dayIdx, exIdx, event) {
+                if (event) event.stopPropagation();
+                const id = `${dayIdx}-${exIdx}`;
+                if (this.state.completed.has(id)) {
+                    this.state.completed.delete(id);
+                } else {
+                    this.state.completed.add(id);
+                }
+                this.saveProgress();
+                
+                if (!document.getElementById('view-home').classList.contains('hidden')) {
+                    this.renderDayList();
+                } else if (!document.getElementById('view-exercises').classList.contains('hidden')) {
+                    this.selectDay(this.state.currentDayIdx);
+                }
+            },
+
+            navTo(viewId) {
+                document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+                document.getElementById('workout-overlay').classList.add('hidden');
+                if (viewId === 'home') {
+                    document.getElementById('view-home').classList.remove('hidden');
+                    this.renderDayList(); 
+                }
+                if (viewId === 'exercises') document.getElementById('view-exercises').classList.remove('hidden');
+            },
+
+            renderDayList() {
+                const list = document.getElementById('day-list');
+                list.innerHTML = '';
+                
+                WORKOUT_DATA.forEach((day, dayIdx) => {
+                    let completedCount = 0;
+                    let totalSeconds = 0;
+                    
+                    day.exercises.forEach((ex, exIdx) => {
+                        if (this.state.completed.has(`${dayIdx}-${exIdx}`)) completedCount++;
+                        totalSeconds += this.getExerciseSeconds(ex);
+                    });
+
+                    const durationStr = this.formatDuration(totalSeconds);
+
+                    const btn = document.createElement('div');
+                    btn.className = 'card';
+                    btn.innerHTML = `
+                        <div class="card-content">
+                            <span class="card-title">
+                                ${day.day}
+                                <span class="time-est">~${durationStr}</span>
+                            </span>
+                            <div class="card-meta">
+                                <span>${day.exercises.length} Exercises</span>
+                                <span style="color: ${completedCount === day.exercises.length ? 'var(--status-go)' : 'var(--accent-blue)'}">
+                                    ${completedCount}/${day.exercises.length} Completed
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    btn.onclick = () => this.selectDay(dayIdx);
+                    list.appendChild(btn);
+                });
+            },
+
+            selectDay(idx) {
+                this.state.currentDayIdx = idx;
+                document.getElementById('day-title-display').innerText = WORKOUT_DATA[idx].day;
+                this.updateRemainingHeader(idx);
+
+                const list = document.getElementById('exercise-list');
+                list.innerHTML = '';
+                
+                WORKOUT_DATA[idx].exercises.forEach((ex, exIdx) => {
+                    const isDone = this.state.completed.has(`${idx}-${exIdx}`);
+                    const exSeconds = this.getExerciseSeconds(ex);
+                    const exDuration = this.formatDuration(exSeconds);
+                    
+                    const btn = document.createElement('div');
+                    btn.className = 'card';
+                    btn.innerHTML = `
+                        <div class="card-content" onclick="App.startExercisePreview(${exIdx})">
+                            <span class="card-title">${ex.name}</span>
+                            <div class="card-meta">
+                                <span class="tag">${ex.sets} Sets</span>
+                                <span class="tag">${ex.reps} Reps</span>
+                                <span class="tag">~${exDuration}</span>
+                            </div>
+                        </div>
+                        <div class="check-area">
+                            <button class="check-btn ${isDone ? 'completed' : ''}" 
+                                onclick="App.toggleCompletion(${idx}, ${exIdx}, event)">
+                                ✓
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(btn);
+                });
+                
+                this.navTo('exercises');
+            },
+
+            startExercisePreview(exIdx) {
+                const dayIdx = this.state.currentDayIdx;
+                const exercise = WORKOUT_DATA[dayIdx].exercises[exIdx];
+                this.state.currentExercise = exercise;
+                this.state.currentExerciseIdx = exIdx;
+                this.state.currentSet = 1;
+                this.state.isPaused = false;
+                this.setSpeed('default');
+                const repStr = String(exercise.reps).split('-').pop();
+                this.state.repsRemaining = parseInt(repStr) || 10;
+                document.getElementById('wk-name').innerText = exercise.name;
+                this.updateSetDisplay();
+                
+                document.getElementById('workout-overlay').classList.remove('hidden');
+                document.getElementById('active-workout-view').classList.remove('hidden');
+                document.getElementById('done-view').classList.add('hidden');
+                
+                this.setPhase('IDLE');
+                this.updateTimeEstimate(); 
+            },
+
+            handleMainAction() {
+                if (this.state.phase === 'IDLE') this.startCountdown();
+                else if (this.state.phase === 'COUNTDOWN') this.skipCountdown();
+                else if (this.state.phase === 'WORK') this.finishSet();
+                else if (this.state.phase === 'REST') this.skipRest();
+            },
+
+            skipCountdown() {
+                this.clearTimers(); 
+                this.startSet();
+            },
+
+            setSpeed(mode) {
+                this.state.currentTempo = PRESETS[mode];
+                document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+                document.getElementById(`btn-${mode}`).classList.add('active');
+                this.updateTimeEstimate(); 
+            },
+
+            toggleManualFinish() {
+                this.state.isManualFinish = !this.state.isManualFinish;
+                const btn = document.getElementById('btn-manual-finish');
+                if (this.state.isManualFinish) {
+                    btn.classList.add('filled');
+                } else {
+                    btn.classList.remove('filled');
+                }
+            },
+
+            updateTimeEstimate() {
+                const totalSets = this.state.currentExercise.sets;
+                const currentSet = this.state.currentSet;
+                
+                const repStr = String(this.state.currentExercise.reps).split('-').pop();
+                const targetReps = parseInt(repStr) || 10;
+                const tempoTotal = this.state.currentTempo.total;
+                const type = this.state.currentExercise.type || 'isolation';
+                const restTimePerSet = CONFIG.rest[type] || CONFIG.rest.default;
+
+                const setsLeftAfterCurrent = Math.max(0, totalSets - currentSet);
+                let futureTime = 0;
+                if (setsLeftAfterCurrent > 0) {
+                    futureTime += setsLeftAfterCurrent * targetReps * tempoTotal; 
+                    futureTime += setsLeftAfterCurrent * restTimePerSet;
+                }
+
+                let currentPhaseTime = 0;
+                if (this.state.phase === 'WORK' || this.state.phase === 'IDLE' || this.state.phase === 'COUNTDOWN') {
+                    const totalDurationForThisSet = targetReps * tempoTotal;
+                    let elapsedInSet = 0;
+                    if (this.state.phase === 'WORK' && this.state.pacerStartTime) {
+                        const now = Date.now();
+                        const effectiveTime = now - this.state.totalPausedTime;
+                        elapsedInSet = (effectiveTime - this.state.pacerStartTime) / 1000;
+                    }
+                    const timeLeftInSet = Math.max(0, totalDurationForThisSet - elapsedInSet);
+                    currentPhaseTime += timeLeftInSet;
+                    if (currentSet < totalSets) currentPhaseTime += restTimePerSet;
+                } else if (this.state.phase === 'REST') {
+                    currentPhaseTime = this.state.timerValue;
+                }
+
+                const totalSeconds = Math.ceil(futureTime + currentPhaseTime);
+                document.getElementById('total-time-left').innerText = `Time Remaining: ${this.formatDuration(totalSeconds)}`;
+            },
+
+            startCountdown() {
+                this.setPhase('COUNTDOWN');
+                let count = 3;
+                const display = document.getElementById('main-display');
+                display.innerText = count;
+                display.classList.add('pulse');
+                
+                // Store in state so we can clear it
+                this.state.timerInterval = setInterval(() => {
+                    count--;
+                    if (count > 0) display.innerText = count;
+                    else if (count === 0) display.innerText = "GO!";
+                    else {
+                        clearInterval(this.state.timerInterval);
+                        display.classList.remove('pulse');
+                        this.startSet();
+                    }
+                }, 1000);
+            },
+
+            startSet() {
+                this.state.pacerStartTime = Date.now();
+                this.state.totalPausedTime = 0; 
+                this.state.isPaused = false;
+                const repStr = String(this.state.currentExercise.reps).split('-').pop();
+                this.state.repsRemaining = parseInt(repStr) || 10;
+                this.setPhase('WORK');
+                this.runWorkLoop();
+            },
+
+            finishSet() {
+                this.clearTimers();
+                this.state.isPaused = false; 
+                
+                if (this.state.currentSet >= this.state.currentExercise.sets) {
+                    this.showDoneScreen();
+                    return;
+                }
+
+                const type = this.state.currentExercise.type || 'isolation';
+                this.state.timerValue = CONFIG.rest[type] || CONFIG.rest.default;
+                
+                this.setPhase('REST'); 
+                
+                this.formatRestTime(this.state.timerValue);
+                
+                this.runRestLoop();
+            },
+
+            showDoneScreen() {
+                document.getElementById('workout-overlay').className = 'phase-done'; 
+                document.getElementById('active-workout-view').classList.add('hidden');
+                document.getElementById('done-view').classList.remove('hidden');
+            },
+
+            completeAndExit() {
+                const id = `${this.state.currentDayIdx}-${this.state.currentExerciseIdx}`;
+                if (!this.state.completed.has(id)) {
+                    this.state.completed.add(id);
+                    this.saveProgress();
+                }
+                this.quitWorkout();
+            },
+
+            addExtraSet() {
+                this.state.currentExercise.sets++;
+                this.updateSetDisplay();
+                document.getElementById('active-workout-view').classList.remove('hidden');
+                document.getElementById('done-view').classList.add('hidden');
+                
+                const type = this.state.currentExercise.type || 'isolation';
+                this.state.timerValue = CONFIG.rest[type] || CONFIG.rest.default;
+                this.setPhase('REST');
+                this.runRestLoop();
+            },
+
+            skipRest() {
+                this.clearTimers();
+                this.state.currentSet++;
+                this.updateSetDisplay();
+                this.startCountdown(); 
+            },
+
+            runWorkLoop() {
+                const display = document.getElementById('main-display');
+                const label = document.getElementById('main-label');
+                const subLabel = document.getElementById('sub-label');
+                const bar = document.getElementById('pacer-bar');
+                const text = document.getElementById('pacer-text');
+                
+                const loop = () => {
+                    if (this.state.phase !== 'WORK') return;
+
+                    if (!this.state.isPaused) {
+                        const tempo = this.state.currentTempo;
+                        const totalTempo = tempo.total * 1000;
+                        const eccentric = tempo.eccentric * 1000;
+
+                        const now = Date.now();
+                        const effectiveTime = now - this.state.totalPausedTime;
+                        const diff = (effectiveTime - this.state.pacerStartTime) % totalTempo;
+                        
+                        let percentage = 0;
+                        
+                        if (diff < eccentric) {
+                            percentage = (diff / eccentric) * 100;
+                            text.innerText = `LOWER (ECCENTRIC)`;
+                            bar.style.left = 'auto'; bar.style.right = '0';
+                            bar.style.background = "#fff"; bar.style.width = `${percentage}%`;
+                        } else {
+                            const concentricTime = diff - eccentric;
+                            const concentricTotal = totalTempo - eccentric;
+                            percentage = (concentricTime / concentricTotal) * 100;
+                            text.innerText = `PUSH (CONCENTRIC)`;
+                            bar.style.left = '0'; bar.style.right = 'auto';
+                            bar.style.background = "var(--accent-blue)"; bar.style.width = `${percentage}%`;
+                        }
+
+                        const totalElapsed = effectiveTime - this.state.pacerStartTime;
+                        const repsDone = Math.floor(totalElapsed / totalTempo);
+                        const currentRepsLeft = this.state.repsRemaining - repsDone;
+                        
+                        display.innerText = currentRepsLeft;
+                        label.innerText = `REPS LEFT`;
+                        subLabel.innerText = `(Total Reps: ${repsDone})`;
+                        
+                        if (currentRepsLeft <= 0 && !this.state.isManualFinish) {
+                            this.finishSet();
+                            return; 
+                        }
+                        
+                        this.updateTimeEstimate();
+                    }
+                    
+                    this.state.animationFrameId = requestAnimationFrame(loop);
+                };
+
+                this.state.animationFrameId = requestAnimationFrame(loop);
+            },
+
+            runRestLoop() {
+                this.formatRestTime(this.state.timerValue);
+                this.updateTimeEstimate(); 
+                
+                this.state.timerInterval = setInterval(() => {
+                    if (this.state.isPaused) return;
+                    this.state.timerValue--;
+                    this.formatRestTime(this.state.timerValue);
+                    this.updateTimeEstimate(); 
+                    if (this.state.timerValue <= 0) this.skipRest(); 
+                }, 1000);
+            },
+
+            formatRestTime(val) {
+                const m = Math.floor(val / 60);
+                const s = val % 60;
+                document.getElementById('main-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            },
+
+            setPhase(phase) {
+                this.state.phase = phase;
+                const overlay = document.getElementById('workout-overlay');
+                const btn = document.getElementById('btn-action');
+                const label = document.getElementById('main-label');
+                const subLabel = document.getElementById('sub-label');
+                const pacer = document.getElementById('pacer-wrapper');
+                const speedControls = document.getElementById('speed-controls-ui');
+
+                overlay.className = ''; 
+
+                if (phase === 'IDLE') {
+                    overlay.classList.add('phase-prep');
+                    btn.innerText = "START SET"; label.innerText = "TARGET REPS";
+                    subLabel.innerText = this.getMotivation();
+                    pacer.style.opacity = '0.3'; speedControls.style.opacity = '1'; speedControls.style.pointerEvents = 'auto';
+                    document.getElementById('main-display').innerText = this.state.repsRemaining;
+                    
+                    // RESET PACER BAR TO 0%
+                    document.getElementById('pacer-bar').style.width = '0%';
+                    document.getElementById('pacer-text').innerText = "LOWER (ECCENTRIC)";
+                } 
+                else if (phase === 'COUNTDOWN') {
+                    overlay.classList.add('phase-count');
+                    btn.innerText = "SKIP COUNTDOWN"; label.innerText = "STARTING IN...";
+                    subLabel.innerText = "Focus!";
+                    pacer.style.opacity = '0.5'; speedControls.style.opacity = '0.5'; speedControls.style.pointerEvents = 'none';
+                    
+                    // RESET PACER BAR TO 0%
+                    document.getElementById('pacer-bar').style.width = '0%';
+                    document.getElementById('pacer-text').innerText = "LOWER (ECCENTRIC)";
+                }
+                else if (phase === 'WORK') {
+                    overlay.classList.add('phase-work');
+                    btn.innerText = "FINISH SET"; 
+                    label.innerText = "REPS LEFT";
+                    subLabel.innerText = "(Total Reps: 0)";
+                    pacer.style.opacity = '1'; speedControls.style.opacity = '1'; speedControls.style.pointerEvents = 'auto';
+                } 
+                else if (phase === 'REST') {
+                    overlay.classList.add('phase-rest');
+                    btn.innerText = "SKIP REST"; label.innerText = "RECOVERY REST";
+                    subLabel.innerText = this.getMotivation();
+                    pacer.style.opacity = '0'; speedControls.style.opacity = '0'; speedControls.style.pointerEvents = 'none';
+                }
+                this.updateTimeEstimate();
+            },
+
+            updateSetDisplay() {
+                document.getElementById('wk-set-curr').innerText = this.state.currentSet;
+                document.getElementById('wk-set-total').innerText = this.state.currentExercise.sets;
+            },
+
+            togglePause() {
+                this.state.isPaused = !this.state.isPaused;
+                const btn = document.querySelectorAll('.btn-sec')[1];
+                btn.innerText = this.state.isPaused ? "Resume" : "Pause";
+                
+                if (this.state.isPaused) {
+                    this.state.lastPauseStart = Date.now();
+                } else {
+                    const pauseDuration = Date.now() - this.state.lastPauseStart;
+                    this.state.totalPausedTime += pauseDuration;
+                }
+            },
+
+            clearTimers() {
+                if (this.state.timerInterval) {
+                    clearInterval(this.state.timerInterval);
+                    this.state.timerInterval = null; 
+                }
+                if (this.state.animationFrameId) {
+                    cancelAnimationFrame(this.state.animationFrameId);
+                    this.state.animationFrameId = null; 
+                }
+                document.getElementById('main-display').classList.remove('pulse');
+            },
+
+            quitWorkout() {
+                this.clearTimers();
+                document.getElementById('workout-overlay').classList.add('hidden');
+                this.selectDay(this.state.currentDayIdx);
+            }
+        };
+
+        // Initialize App
+        App.init();
+
+    </script>
+</body>
+</html>
