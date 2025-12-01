@@ -21,11 +21,7 @@ const CONFIG = {
 const MOTIVATION = [
     "Keep pushing",
     "You can do it",
-    "Earn itttt",
-    "Squeeeeeze!",
-    "Lock in",
-    "L O C K   I N",
-    "Are you a shrimp?",
+    "Squeeze at the top",
+    "LOCK IN",
     "Connect to the muscle",
-    "You're no shrimp.",
 ];
